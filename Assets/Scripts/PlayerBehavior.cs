@@ -1,43 +1,37 @@
 using System;
 using Unity.VisualScripting;
+using UnityEditor.PackageManager.Requests;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class PlayerBehavior : MonoBehaviour
 {
-    //[HideInInspector]  Hide in the inspector
-    //[SerializeField]  Show in the inspector even if private
     public float speed;
     public Animator animator;
-
     private Vector2 moveInput;
     private bool isFacingRight = true;
-
     private Rigidbody2D _rb;
     private SpriteRenderer _sr;
 
-    private Animator dashAnimator;
-
-
     // Dash settings
-    public UnityEngine.Object dashEffect;
-    private bool isDashing = false;
-    private SpriteRenderer dashSprite;
+    // private AttackBehavior attackBehavior;
+    public GameObject attackEffectPrefab;
     public int dashSpeed;
     public float dashLength = 0.5f;
     public float dashCooldown = 0.1f;
     private float dashCoolCounter;
     private float dashCounter;
     private float activeSpeed;
+    private AttackBehavior.Direction direction;
 
     // Start is called before the first frame update
     void Start()
     {
         _rb = GetComponent<Rigidbody2D>();
         _sr = GetComponent<SpriteRenderer>();
-        dashAnimator = dashEffect.GetComponent<Animator>();
-        dashSprite = dashEffect.GetComponent<SpriteRenderer>();
-        dashSprite.enabled = false;
+
         activeSpeed = speed;
+        direction = AttackBehavior.Direction.Down;
     }
 
     // Update is called once per frame
@@ -49,11 +43,13 @@ public class PlayerBehavior : MonoBehaviour
         {
             if (moveInput.x > 0 && isFacingRight)
             {
-                Flip();
+                direction = AttackBehavior.Direction.Left;
+                FlipX();
             }
             else if (moveInput.x < 0 && !isFacingRight)
             {
-                Flip();
+                direction = AttackBehavior.Direction.Right;
+                FlipX();
             }
 
             moveInput.y = 0;
@@ -62,17 +58,16 @@ public class PlayerBehavior : MonoBehaviour
         {
             if (moveInput.y > 0)
             {
-
+                direction = AttackBehavior.Direction.Up;
             }
             else if (moveInput.y < 0)
             {
-
+                direction = AttackBehavior.Direction.Down;
             }
             moveInput.x = 0;
         }
 
         moveInput.Normalize();
-
         Dash();
         _rb.velocity = moveInput * activeSpeed;
         Debug.Log(String.Format("x:{0} y:{1} speed:{2}", moveInput.x, moveInput.y, activeSpeed));
@@ -88,8 +83,17 @@ public class PlayerBehavior : MonoBehaviour
             {
                 activeSpeed = dashSpeed;
                 dashCounter = dashLength;
-                dashSprite.enabled = true;
-                dashAnimator.SetBool("isDashing", true);
+                Debug.Log("Dash");
+                GameObject attackEffect = Instantiate(attackEffectPrefab, gameObject.transform.position, Quaternion.identity);
+                if (attackEffect != null)
+                {
+                    attackEffect.transform.SetParent(gameObject.transform);
+                    AttackBehavior attackBehavior = attackEffect.GetComponent<AttackBehavior>();
+                    if (attackBehavior != null)
+                    {
+                        StartCoroutine(attackBehavior.Attack(direction, dashLength));
+                    }
+                }
             }
         }
 
@@ -100,8 +104,6 @@ public class PlayerBehavior : MonoBehaviour
             {
                 activeSpeed = speed;
                 dashCoolCounter = dashCooldown;
-                dashAnimator.SetBool("isDashing", false);
-                dashSprite.enabled = false;
             }
         }
 
@@ -111,7 +113,7 @@ public class PlayerBehavior : MonoBehaviour
         }
     }
 
-    private void Flip()
+    private void FlipX()
     {
         Vector3 currentScale = gameObject.transform.localScale;
         currentScale.x *= -1;

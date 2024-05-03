@@ -7,9 +7,11 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager instance;
 
-    public TMP_Text LifeText;
+    public GameObject player;
 
-    private int _lifeCount;
+    public GameObject caisse;
+
+    private GameObject canvas;
 
     // Start is called before the first frame update
     private void Awake()
@@ -17,12 +19,27 @@ public class GameManager : MonoBehaviour
         if (instance != null)
         {
             Destroy(this.gameObject);
+            return;
         }
         instance = this;
     }
 
-    public void UpdateLifeCounter(int life)
+    private void Start()
     {
-        LifeText.text = $"Life: {++_lifeCount}";
+        canvas = GameObject.Find("Canvas");
+    }
+
+    private void initiateLife()
+    {
+        GameObject life = new();
+    }
+    public void GameOver()
+    {
+        Debug.Log("Gros nullos");
+    }
+
+    public void CaisseLostLife()
+    {
+
     }
 }
